@@ -1,0 +1,12 @@
+name: EDAV
+title: EDAV
+username:
+account: hkddd
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 325492
+bundleId: 1326107
+url: https://hkddd.shinyapps.io/EDAV/
+when: 1524079989.6071
+asMultiple: FALSE
+asStatic: FALSE
