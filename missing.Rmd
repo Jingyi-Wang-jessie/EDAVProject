@@ -1,0 +1,44 @@
+---
+title: "Campaign Contribution Pattern Research in 2017-2018 Election Cycle - Analysis of Data Quality"
+output: html_document
+Team Members: Zihan Ye(zy2293), Jiachen Xu(jx2318), Jingyi Wang(jw3562), Haikun Du(hd2377)
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE,
+                      message = FALSE)
+```
+
+We plot a bar to show each column’s missing value percentage in dataset. It is worth noticing that “OCCUPATION” has 4% missing values, because we would look into “OCCUPATION” in the following analysis. Other interested columns, “STATE”, “TRANSACTION_DT”, “TRANSACTION_AMT” have no missing value.
+
+Specifically, we looked into “OCCUPATION”. There are typos and the same occupation is written in different format, for instance “DIR”, “MGR” are abbreviations of director and manager. Additionally, some rows have several occupations cluster in one cell indicating this contributor has multiple titles. For analysis simplicity, we only keep the first appeared title. Furthermore, we group occupations, for instance, “Retired-teachers” and “Retired-CEO” are clustered as “retired”. Unavoidably, this action introduced bias into the dataset.
+
+```{r, fig.width=20, fig.height=10}
+library(readr)
+library(dplyr)
+library(ggplot2)
+na <- read.csv("datafiles/missing.csv")
+
+g <- ggplot(na, aes(x = colname , y = missing)) + geom_bar(stat = "identity")  + geom_text(aes(label=missing), vjust=-1, color = "red")
+g +labs(title="Missing Values Pattern In Columns",
+        x ="Columns", y = "Percentage")
+
+```
+
+
+
+
+We also plot another bar chart regarding different occupations’ frequency.  We replace all missing value in “OCCUPATION” with “NONE”. From the bar chart, “NONE” ranked the fourth most frequent occupation.  Because there is no way we can identify their true value, meaning they are missing completely at random. In the future in-depth analysis and visualization in occupation, we excluded these data.
+
+
+```{r, fig.width=20, fig.height=10}
+library(readr)
+library(dplyr)
+occu <- read.csv("datafiles/occumissing.csv")
+
+g <- ggplot(occu, aes(x = occu , y = missing)) + geom_bar(stat = "identity")  + geom_text(aes(label=missing), hjust = -0.5, vjust=0.5, color = "red") + coord_flip()
+g +labs(title="Occupations Frequency",
+        x ="Occupations", y = "Frequency")
+
+```
+
