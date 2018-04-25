@@ -1,6 +1,8 @@
 ---
-title: "jx2318"
+title: "Campaign Contribution Pattern Research in 2017-2018 Election Cycle - Grographic"
 output: html_document
+Team Members: Zihan Ye(zy2293), Jiachen Xu(jx2318), Jingyi Wang(jw3562), Haikun Du(hd2377)
+
 ---
 
 ```{r setup, include=FALSE}
@@ -37,11 +39,13 @@ temp <- temp %>% group_by(STATE,CITY) %>% mutate(sum = sum(TRANSACTION_AMT))
 temp <- temp[!temp$CITY == "",]
 temp <- temp[!temp$STATE == "",]
 
-temp <- temp[!(duplicated(temp$CITY) & duplicated(temp$STATE)),]
-
+temp <- temp[order(temp$sum),]
+cities <- tail(temp,10)
+cities <- c('LAS VEGAS','ATLANTA','PHILADELPHIA','DALLAS','LOS ANGELES')
+temp <- temp[temp$CITY %in% cities,]
 temp <- as.data.frame(temp)
 
-temp$CITY <- factor(temp$CITY, levels = unique(temp$CITY))
+temp$CITY <- factor(temp$CITY, levels = cities)
 temp$STATE <- factor(temp$STATE, levels = unique(temp$STATE))
 temp$lab_city <- as.integer(temp$CITY)
 temp$lab_state <- as.integer(temp$STATE)
@@ -63,12 +67,13 @@ p <- temp %>%   plot_ly(type = 'parcoords',
 
 p
 ```
-Because in this section, we fouced on explore the dataset from the geopraphic aspect. Firstly, we visulized the geographical dataset to evaluate the date. Some results appealed our attention, a number of cities point to different states. At first, we thougth this may because some pure errors in the dataset. However, after some investigation, we found there there do have a number of cities share same name but locate in different states. Considering this situation, we decided only apply 'STATE' as index to explore the dat to avoid misunderstaing by applying 'CITY' data.  
+In this section, we fouced on explore the dataset from the geopraphic aspect. Firstly, we visulized the geographical dataset to evaluate the date. Some results appealed our attention, a number of cities point to different states. At first, we thougth this may because some pure errors in the dataset. However, after some investigation, we found there there do have a number of cities share same name but locate in different states. Considering this situation, we decided only apply 'STATE' as index to explore the dat to avoid misunderstaing by applying 'CITY' data.  (In this graph, to make the observation clearer, we only select 5 cities.)
 ```{r,fig.width=10,fig.height=10}
 
 temp <- all[,c('CMTE_ST','STATE','TRANSACTION_AMT','CMTE_PTY_AFFILIATION')]
 temp <- temp[!temp$STATE == '',]
 temp <- temp %>% group_by(STATE) %>% summarise(sum = sum(TRANSACTION_AMT))
+
 ggplot(temp, aes(sum, reorder(`STATE`,sum))) + geom_point(size = 5) + xlab("The Sum of Transaction") + ylab("The States") + labs(title = "The sum of Transaction among States ")+ theme(plot.title = element_text( size= 20),axis.title.x = element_text(size= 15),axis.title.y = element_text(size= 15), axis.text = element_text(size = 10))
 
 ```
@@ -88,7 +93,7 @@ Acooring to this graph, we found that for most statse, the sum of transactions w
   
 2. Committee Type and States  
 The intention for this graph was to detect whether there have clear preference about committee types among different states. The data set including 16 different types of the cimmitees in total. Of course, most of them are PAC(Political Action Committee). However, the data also include some other types of the committee, like Campaign committee for candidate for Senate, Campaign committee for candidate for President. We want to dig whether individuals from different states have different preferences among these kinds of committee as well. We achieved this through drawing this sankeynetwork.  
-```{r,fig.width=8,fig.height=10}
+```{r,fig.width=10,fig.height=10}
 library(networkD3)
 temp1 <- all[,c('CMTE_TP','STATE','TRANSACTION_AMT')]
 temp1 <- temp1 %>% group_by(STATE, CMTE_TP) %>% summarise(sum = sum(TRANSACTION_AMT))
