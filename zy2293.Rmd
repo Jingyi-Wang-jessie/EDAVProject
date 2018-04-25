@@ -1,0 +1,77 @@
+---
+title: "Campaign Contribution Pattern Research in 2017-2018 Election Cycle - Occupation"
+output: html_document
+Team Members: Zihan Ye(zy2293), Jiachen Xu(jx2318), Jingyi Wang(jw3562), Haikun Du(hd2377)
+---
+This page focuses on researching and visualizing compaign contribution pattern in the dimension of "Occupation".
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE,
+                      message = FALSE)
+```
+
+
+We first created a bubble chart in order to have a brief overview of occupation distribution pattern. The bubble charts plot the top 100 occupations with the largest contribution populations and their average transaction amount. Bubbles radii represent total transaction amount. We find that, although “retired” population has the largest overall transaction amount, their average transaction is around 800$/person.  “Chairman” and “CEO” might have relatively smaller population, their population average transaction amounts are almost $7,000 and $10,000 per person. Most bubbles cluster around the origin, indicating relatively smaller population and average transaction amount.
+
+```{r}
+#install.packages("plotly")
+library(plotly)
+data <- read.csv("datafiles/occupation_200.csv")
+data$AVERAGE = data$TRANSACTION_AMT/data$TIMES
+
+p <- plot_ly(data,  x = ~AVERAGE,y = ~CONTRIBUTORS,  type = 'scatter', mode = 'markers', size = ~TRANSACTION_AMT, color = ~OCCUPATION, colors = 'Paired',
+             marker = list(opacity = 0.5, sizemode = 'diameter',
+                           line = list(width = 2, color = '#FFFFFF')),
+             hoverinfo = 'text',
+             text = ~paste('Occupation:', OCCUPATION, '<br>Total_Transaction_Amt:', TRANSACTION_AMT, '<br>Mean_Transaction_Amt:', AVERAGE)) %>%
+  layout(title = 'TOP 100 Common Occupation Contributions',
+         xaxis = list(title = 'MEAN TRANSACTION AMOUNT',
+                      showgrid = FALSE),
+         yaxis = list(title = 'CONTRIBUTOR POPULATION',
+                      showgrid = FALSE),
+         showlegend = FALSE)
+p
+```
+
+
+
+We then want to further understand occupations contribution patterns to different parties. The following faceted bar chart shows top 5 occupations which contributed the most to the party. With fixed x scale, it is obvious that transactions to republican party and democratic party are the most. The top 5 occupations contributed to democratic party is “retired”, “attorney”, “not employed”, “CEO”, “president” in descending order. The top 5 occupations contributed to republican party is “retired”, “CEO”, “homemaker”, “president”, “CEO” in descending order. Apparently, there are some occupations generally contribute a lot to different parties, for instance “retired”, “CEO”, “president”. Whereas, some occupations have inclinations of contributing to a specific party, for instance, “attorney”, “homemaker” and etc.
+
+```{r, fig.width=20, fig.height=10}
+library(readr)
+library(dplyr)
+occuParty <- read.csv("datafiles/occu_to_party.csv")
+
+ggplot(occuParty, aes(x = OCCUPATION, y = TRANSACTION_AMT)) + geom_bar(stat = "identity") + facet_wrap(~CMTE_PTY_AFFILIATION, scales = "free_y") + coord_flip()
+
+
+```
+
+
+
+Additionally, we further investigated occupations contribution patterns of each state for republican party and democratic party. The discovery is consistent of the previous bar plot. In democratic party’s map graph, “retired”, “attorney”, “CEO”, “not employed” appeared to the most dominant occupations for most states. There are some other occupations worth noticing, for instance, “consultant” is in top 5 occupations in DC. With fixed x, y scales, it is obvious to see that lots of contributions happened in California, New York.
+
+
+```{r, fig.width=20, fig.height=25}
+#install.packages("geofacet")
+library(geofacet)
+occuDEM <- read.csv("datafiles/occu_to_DEM.csv")
+ggplot(occuDEM, aes(OCCUPATION, TRANSACTION_AMT, fill = OCCUPATION)) +
+    geom_col() +
+     coord_flip() +
+     facet_geo(~ STATE,grid = "us_state_grid2") + xlab("Occupation") + labs(title = "Occupations with Most Contributions to DEM /STATE") + theme(axis.text.x = element_blank(),plot.title = element_text( size= 25),axis.title.x = element_text(size= 10),axis.title.y = element_text(size= 10))
+```
+
+
+
+In republican party’s map graph, “retired”, “CEO”, “president” appeared to the most dominant occupations for most states. There are some variations in occupations types in different states for instance, “physician” is in top 5 occupations in TN. With fixed x, y scales, it is obvious to see that lots of contributions happened in California, Texax and Florida.
+
+```{r, fig.width=20, fig.height=25}
+#install.packages("geofacet")
+library(geofacet)
+occuREP <- read.csv("datafiles/occu_to_REP.csv")
+ggplot(occuREP, aes(OCCUPATION, TRANSACTION_AMT, fill = OCCUPATION)) +
+    geom_col() +
+     coord_flip() +
+     facet_geo(~ STATE,grid = "us_state_grid2") + xlab("Occupation") + labs(title = "Occupations with Most Contributions to REP /STATE") + theme(axis.text.x = element_blank(),plot.title = element_text( size= 25),axis.title.x = element_text(size= 10),axis.title.y = element_text(size= 10))
+```
