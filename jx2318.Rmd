@@ -1,0 +1,202 @@
+---
+title: "jx2318"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE,cache = TRUE,warning = FALSE)
+```
+
+## R Markdown
+Load the data rom the dataset.  
+In this part, we focused the exploration on geographical part. From the original data set, we have both the 'STATE' attribute and 'CITY' attribute for individual and commitee.  So at the begining of the analysis, we want to applied these data on our analysis.   
+
+```{r }
+cm <- read.csv(file="C:\\Users\\jiachen xu\\Desktop\\Columbia Course\\Data Visualization\\Homework\\project\\cm.txt", header = FALSE, sep="|")
+cm_header <- read.csv(file="C:\\Users\\jiachen xu\\Desktop\\Columbia Course\\Data Visualization\\Homework\\project\\cm_header_file.csv", header = TRUE, sep=",")
+colnames(cm) <- colnames(cm_header)
+data <- read.csv(file="C:\\Users\\jiachen xu\\Desktop\\Columbia Course\\Data Visualization\\Homework\\project\\filtered_v2.csv", header = TRUE, sep=",")
+
+data_use <- data[,c("CMTE_ID","NAME","CITY","STATE","TRANSACTION_AMT")]
+cm_use <- cm[,c("CMTE_ID","CMTE_CITY","CMTE_ST","CMTE_TP","CMTE_PTY_AFFILIATION")]
+all <- merge(data_use,cm_use,by = 'CMTE_ID')
+```
+
+```{r}
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(plotly)
+```
+1. General Exploration
+Evaluate the data
+```{r,fig.width=10,fig.height=10}
+library(plotly)
+temp <- all[,c('CITY','STATE','TRANSACTION_AMT')]
+temp <- temp %>% group_by(STATE,CITY) %>% mutate(sum = sum(TRANSACTION_AMT))
+temp <- temp[!temp$CITY == "",]
+temp <- temp[!temp$STATE == "",]
+
+temp <- temp[!(duplicated(temp$CITY) & duplicated(temp$STATE)),]
+
+temp <- as.data.frame(temp)
+
+temp$CITY <- factor(temp$CITY, levels = unique(temp$CITY))
+temp$STATE <- factor(temp$STATE, levels = unique(temp$STATE))
+temp$lab_city <- as.integer(temp$CITY)
+temp$lab_state <- as.integer(temp$STATE)
+
+p <- temp %>%   plot_ly(type = 'parcoords',
+              line = list(color = 'blue'),
+               dimensions = list(
+               list(range = c(1,length(unique(temp$STATE))),
+                    tickvals  = c(1:length(unique(temp$STATE))),
+                    label = 'STATE', values = ~lab_state,
+                    ticktext = unique(temp$STATE)),
+               list(range = c(1,length(unique(temp$CITY))),
+                    tickvals  = c(1:length(unique(temp$CITY))),
+                    label = 'CITY', values = ~lab_city,
+                    ticktext = unique(temp$CITY)),
+               list(range = c(~min(sum),~max(sum)),
+                    label = 'SUM', values = ~sum))
+             )
+
+p
+```
+Because in this section, we fouced on explore the dataset from the geopraphic aspect. Firstly, we visulized the geographical dataset to evaluate the date. Some results appealed our attention, a number of cities point to different states. At first, we thougth this may because some pure errors in the dataset. However, after some investigation, we found there there do have a number of cities share same name but locate in different states. Considering this situation, we decided only apply 'STATE' as index to explore the dat to avoid misunderstaing by applying 'CITY' data.  
+```{r,fig.width=10,fig.height=10}
+
+temp <- all[,c('CMTE_ST','STATE','TRANSACTION_AMT','CMTE_PTY_AFFILIATION')]
+temp <- temp[!temp$STATE == '',]
+temp <- temp %>% group_by(STATE) %>% summarise(sum = sum(TRANSACTION_AMT))
+ggplot(temp, aes(sum, reorder(`STATE`,sum))) + geom_point(size = 5) + xlab("The Sum of Transaction") + ylab("The States") + labs(title = "The sum of Transaction among States ")+ theme(plot.title = element_text( size= 20),axis.title.x = element_text(size= 15),axis.title.y = element_text(size= 15), axis.text = element_text(size = 10))
+
+```
+  
+From this graph, we observed that when considering the total transaction amount, 'CA', 'NY' and 'TX' led all other states, have much higher transaction amount. And the transaction amount among different states differed a lot, comparing 'CA' and 'FM'. (This graph contained more than 50 states, because some abbreviation represents transactions from outside US.)
+```{r,fig.width=10,fig.height=10}
+
+temp <- all[,c('CITY','STATE','TRANSACTION_AMT')]
+temp <- temp %>% group_by(STATE,CITY) %>% mutate(sum = sum(TRANSACTION_AMT),count = n())
+temp <- temp[!temp$CITY == "",]
+temp <- temp[!temp$STATE == "",]
+
+temp <- temp[!(duplicated(temp$CITY) & duplicated(temp$STATE)),]
+ggplot(temp, aes( count,sum )) + geom_point(size = 5) + xlab("The Number of Transaction") + ylab("The Sum of Transactions") + labs(title = "The Reltaionship between the Sum and the Number of Transaction among States ")+ theme(plot.title = element_text( size= 20),axis.title.x = element_text(size= 15),axis.title.y = element_text(size= 15), axis.text = element_text(size = 10))
+```
+Acooring to this graph, we found that for most statse, the sum of transactions was positive correlation with the number of transactions. However, only one states have relative larger number transactions but lower amount of transactions, which violated this tendency a bit.  
+  
+2. Committee Type and States  
+The intention for this graph was to detect whether there have clear preference about committee types among different states. The data set including 16 different types of the cimmitees in total. Of course, most of them are PAC(Political Action Committee). However, the data also include some other types of the committee, like Campaign committee for candidate for Senate, Campaign committee for candidate for President. We want to dig whether individuals from different states have different preferences among these kinds of committee as well. We achieved this through drawing this sankeynetwork.  
+```{r,fig.width=8,fig.height=10}
+library(networkD3)
+temp1 <- all[,c('CMTE_TP','STATE','TRANSACTION_AMT')]
+temp1 <- temp1 %>% group_by(STATE, CMTE_TP) %>% summarise(sum = sum(TRANSACTION_AMT))
+
+name_vec <- c(as.character(unique(temp1$STATE)), as.character(unique(temp1$CMTE_TP)))
+
+nodes <- data.frame(name = name_vec, id = seq(0,length(name_vec)-1,1))
+
+links <- temp1 %>%
+  left_join(nodes, by = c('STATE' = 'name')) %>%
+  rename(state_id = id) %>%
+  left_join(nodes, by = c('CMTE_TP' = 'name')) %>%
+  rename(cmte_tp_id = id)
+
+
+sankeyNetwork(Links = links, Nodes = nodes, Source = 'state_id', Target = 'cmte_tp_id', 
+              Value = 'sum', NodeID = 'name', fontSize = 10)%>% 
+  htmlwidgets::prependContent(htmltools::tags$h1("The sum of Transactions to types of  Committe among different States")) 
+```
+From this graph, from right to left, we could found that the committee with type("Q"), PAC - Qualified got the most transactions. Following by type("Y")(Party - Qualified) and type("W")(PAC with Non-Contribution Account - Qualified). Comparing, with unqualfied committee, (N - PAC Nonqualified, X - Party - Nonqualified,  V -	PAC with Non-Contribution Account - Nonqualified), we could observed that individuals are more likely to donate to those qualified commitee.  
+  
+Observing the graph from right to left, first, we could found that, CA, followed by VY and DC, were the top three states with most transaction amount. If further focused our exploration on these three states, we could found the difference between individuals among different states. To be more specific, individual from CA prefer more about committee with type (Y and W). However, inviduals from DC perfered more to commmittee with type("O")(Super PACs).    
+  
+3. Committee and States   
+Now, let's focus on more interesting part. There have 61 different committee in the original dataset in total. At first, we tried to includ all of them into one graph. But we found the final performace was not that good. So we decided focus on the two largest committee, demcratic and republican party, which are also the two biggest parties in the united states. This graph intended to detect whether individual transactions from this dataset could represent the state political perference.  
+```{r,fig.width=10,fig.height=10}
+library(geofacet)
+temp2 <- all[,c('CMTE_PTY_AFFILIATION','STATE','TRANSACTION_AMT')]
+temp2 <- temp2[temp2$CMTE_PTY_AFFILIATION == 'DEM' |temp2$CMTE_PTY_AFFILIATION == 'REP',]
+temp2 <- temp2 %>% group_by(STATE, CMTE_PTY_AFFILIATION) %>% summarise(sum = sum(TRANSACTION_AMT))
+
+name_vec <- c(as.character(unique(temp2$STATE)), as.character(unique(temp2$CMTE_PTY_AFFILIATION)))
+
+nodes <- data.frame(name = name_vec, id = 0:63)
+
+group.colors <- c(DEM = "#333BFF", REP = "#FF0000")
+ggplot(temp2, aes(CMTE_PTY_AFFILIATION, sum, fill = CMTE_PTY_AFFILIATION)) +
+    geom_col() +
+     coord_flip() +
+     facet_geo(~ STATE,grid = "us_state_grid2",scales = "free_x") + ylab("Sum of the Transactions")+ xlab("Different Committee")+ labs(title = "Sum of Transaction to Different Committee in different State", fill = "Committee") + theme(axis.text.x = element_blank(),plot.title = element_text( size= 20),axis.title.x = element_text(size= 15),axis.title.y = element_text(size= 15))+scale_fill_manual(values=group.colors)
+```
+For easier comarpsion, we draw the geo facet plot. And considering the intention of this graph, we set scales = free_x, which make the perference between states easier to be observed, althought the total transasctions among states various a lot.  
+CA, NY, MA, IL made more donation to Democratic committee. On the contrary, TX, FL,LA, TN made more contributions to Replublican committee. Also, there have some other states did not have clear tendency, like CO. The visualization results was quite consistent with our background information. Hence, we concluded that individual transactions from this dataset could represent the state political perference.   
+  
+4.Committee and States  
+In this part, we want to detect whethere the time pattarn in different states have slightly difference. To make the comparison easier, we set scales = "free_y".    
+```{r,fig.width= 25,fig.height=15}
+temp3 <- data[,c("TRANSACTION_DT","STATE","TRANSACTION_AMT")]
+temp3 <- temp3 %>% group_by(STATE, TRANSACTION_DT) %>% summarise(sum = sum(TRANSACTION_AMT))
+temp3 <- temp3[!temp3$STATE == "",]
+temp3$datetime <- as.Date(temp3$TRANSACTION_DT)
+ggplot(temp3, aes(datetime, sum)) +
+    geom_line(color = "steelblue") +
+     facet_geo(~ STATE, grid = "us_state_grid2", scales = "free_y") +
+     ylab("Transaction Amount") +
+     xlab("Transaction Time(From 2017-01-03 -- 2017-12-31)") + labs( title = "Transaction Time Flow at Different States") + theme(plot.title = element_text( size= 35),axis.text.x=element_text(angle=45,hjust=1),axis.title.x = element_text(size= 25),axis.title.y = element_text(size= 15))
+
+```
+Firstly, we observed that some states have regular time pattern. For instance, 'FL','PA', the transactions experience a jump every a few months. However, 'CA' and 'WY' have the jump of the transactions were more frequently than other states. On the other hand, if ignoring the abnormal high transaction, the transactions at 'ND' was more flat. Also transactions at 'LA' were more concentrate at the first half year, which tendency could also be observed at 'SC'. But at 'HI' the transactions were more frequenctly at the second half of the year. All of these could help us explore the slightly difference of the time pattern among states.  
+5. Transaction Flow and States
+```{r,fig.width=10,fig.height=11}
+
+library(rnaturalearth)
+library(rgdal)
+library(geosphere)
+library(standardize)
+library(leaflet)
+library(RColorBrewer)
+countries <- ne_countries()
+
+states <- ne_states(iso_a2 = 'US')
+temp7 <- all[,c('CMTE_ST','STATE','TRANSACTION_AMT')]
+temp7 <- temp7 %>% group_by(STATE,CMTE_ST) %>% summarise(sum = sum(TRANSACTION_AMT))
+
+states_xy <- states@data %>% select(postal, longitude, latitude)
+temp7 <- temp7 %>%
+  left_join(states_xy, by = c('STATE' = 'postal')) %>%
+  left_join(states_xy, by = c('CMTE_ST' = 'postal'))
+
+temp7$longitude.y <- as.numeric(as.character(temp7$longitude.y))
+
+temp7$latitude.y <- as.numeric(as.character(temp7$latitude.y))
+temp7 <- na.omit(temp7)
+
+temp7$sum_scaled<- scale(temp7$sum)
+flows <- gcIntermediate(temp7[,4:5], temp7[,6:7], sp = TRUE, addStartEnd = TRUE)
+
+flows$amt <- temp7$sum_scaled
+
+flows$origins <- temp7$STATE
+
+flows$destinations <- temp7$CMTE_ST
+
+hover <- paste0(flows$origins, " to ", 
+                flows$destinations, ': ', 
+                as.character(flows$amt))
+
+pal <- colorFactor(brewer.pal(4, 'Set2'), flows$origins)
+
+leaflet() %>%
+  addProviderTiles('CartoDB.Positron') %>%
+  addPolylines(data = flows, weight = ~amt, label = hover, 
+               group = ~origins, color = ~pal(origins)) %>%
+  addLayersControl(overlayGroups = unique(flows$origins), position = 'topright',
+                   options = layersControlOptions(collapsed = FALSE,autoZIndex = TRUE))
+```
+
+We draw this graph to detect the transacton flow among different states.
+The observation was quite interesting. Nearly all transaction started form CA moves to DC and MA. The same situation found at NY. For FL, althougth most of the transaction move to DC, but a number of sifferetnt other states received transactions from FL as well, which may emans that comparing with individual form DC and NY, inviduals form FL have more diversity transanctions.  
+Also comapring with DC and NY, which only have these two transactions states, TX have some transaction flow to DC but not clear flow to MA.  
+And there have some transactions from MA to CA. Overall, most of the transactions end at DC, following by NY.
