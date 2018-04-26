@@ -1,0 +1,97 @@
+---
+title: "Campaign Contribution Pattern Research in 2017-2018 Election Cycle - Transaction Type"
+output: html_document
+Team Members: Zihan Ye(zy2293), Jiachen Xu(jx2318), Jingyi Wang(jw3562), Haikun Du(hd2377)
+---
+This page focuses on researching and visualizing compaign contribution pattern in the perspective of "Transaction Type".
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE,
+                      message = FALSE)
+```
+
+### Transaction amount for different types: Bar Chart
+
+First we created two bar chart in order to have a brief overview of the pattern of transaction types. The first bar chart shows us the average transaction amount for different types of transactions. And the second bar chart shows us the number of contributions for different transaction types. From the result we can find that Type 32 (Recount Account receipt from an individual, partnership or limited liability company) has the highest average transaction amount. However, most transactions are type 15 (Contribution to political committees from an individual, partnership or limited liability company). So, in order to find fundings in a more efficient way, candidates need to make a specific strategy for different type of contributions. 
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(vcd)
+library(vcdExtra)
+data <- read.csv("/Users/haikundu/Desktop/STAT 5702/project/merged.csv")
+countorder <- data %>% group_by(TRANSACTION_TP) %>% summarize(total = sum(TRANSACTION_AMT),number = n())
+ggplot(countorder,aes(reorder(TRANSACTION_TP,total/number),total/number))+
+  geom_col()+
+  coord_flip()+
+  labs(title = "TRANSACTION_TP")+
+  xlab("Transaction Type")+
+  ylab("Average amount of a transaction")+
+  ggtitle("Average transaction amount for different types of transactions")
+```
+
+```{r}
+#traction counts
+ggplot(countorder,aes(reorder(TRANSACTION_TP,number),number),number)+
+  geom_col()+
+  coord_flip()+
+  labs(title = "TRANSACTION_TP")+
+  xlab("Transection Type")+
+  ylab("Number of transections")+
+  ggtitle("Number of transactions for different types of transections")
+```
+
+### Analysis for highest average transaction types(32): Bar Chart
+In this part, we choose transaction type 32 (Recount Account receipt from an individual, partnership or limited liability company) as an example to help committees to make strategy to find fundings. Type 32 has the highest average transaction amount, so for this type of contribution you need to consider making more personalized lobbying strategy and concentrate on the most important target groups. The first plot is about state overview and the second plot is about occupation overview. Based on our analysis, finding CEO in New York and California as target may be the best choice.
+
+```{r}
+#high average
+t_32 <- data %>% filter(TRANSACTION_TP == "32")
+t_32_state <- t_32 %>% group_by(STATE) %>% summarize(total = sum(TRANSACTION_AMT),number = n()) %>% filter(total > 200000)
+t_32_occupation <- t_32 %>% group_by(OCCUPATION) %>% summarize(total = sum(TRANSACTION_AMT),number = n()) %>% filter(total > 150000)
+#state
+ggplot(t_32_state,aes(reorder(STATE,total),total),total)+
+  geom_col()+
+  coord_flip()+
+  xlab("State")+
+  ylab("Total amounts of transactions for each state")+
+  ggtitle("Total transaction amounts of Transaction Type 32")
+```
+
+```{r}
+#occupation
+ggplot(t_32_occupation,aes(reorder(OCCUPATION,total),total),total)+
+  geom_col()+
+  coord_flip()+
+  xlab("Occupation")+
+  ylab("Total amounts of transactions for each state")+
+  ggtitle("Total transaction amounts of Transaction type 32")
+```
+
+### Analysis for most frequent transaction types(15): Bar Chart
+
+On the other hand, we choose transaction type 15 (Contribution to political committees from an individual, partnership or limited liability company) as an example to help committees to make a different strategy with type 32 to find fundings. Type 15 are the most frequent transaction types. However, its average transaction amount is pretty small. So for this type of contribution 
+you may consider making generalized lobbying strategy such as public large scale speech in target group community. The first plot is about state overview and the second plot is about occupation overview. Based on our analysis, quite different from type 32, speaking to retired people may be the best choice for type 15. And focus on california may be better.
+
+```{r}
+t_15 <- data %>% filter(TRANSACTION_TP == "15")
+t_15_state <- t_15 %>% group_by(STATE) %>% summarize(total = sum(TRANSACTION_AMT),number = n()) %>% filter(total > 2000000)
+t_15_occupation <- t_15 %>% group_by(OCCUPATION) %>% summarize(total = sum(TRANSACTION_AMT),number = n()) %>% filter(total > 2000000)
+#state
+ggplot(t_15_state,aes(reorder(STATE,total),total),total)+
+  geom_col()+
+  coord_flip()+
+  xlab("State")+
+  ylab("Total amounts of transactions for each state")+
+  ggtitle("Total transaction amounts of Transaction type 15")
+```
+
+```{r}
+#occupation
+ggplot(t_15_occupation,aes(reorder(OCCUPATION,total),total),total)+
+  geom_col()+
+  coord_flip()+
+  xlab("Occupation")+
+  ylab("Total amounts of transactions for each state")+
+  ggtitle("Total transaction amounts of Transaction type 15")
+```
