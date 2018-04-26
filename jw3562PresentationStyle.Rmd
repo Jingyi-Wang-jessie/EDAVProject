@@ -1,0 +1,29 @@
+---
+title: "Campaign Contribution Pattern Research in 2017-2018 Election Cycle - Presentation Style - Number of Transactions by Date"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+```
+
+The following line plot reflected an obvious periodic pattern over time. We could hover on any data point in the plot to know that day's detailed information. We concluded that during 2017, much more people tended to contribute at the end of a month than other time points. What's more, four extreme peaks occured at March, June, September and December. This three-months periodicity was consistent with the ends of four quarters in a year.
+
+```{r}
+library(ggplot2)
+library(tidyverse)
+library(plotly)
+
+df <- read.csv("filtered_v2.csv")
+fulldata <- df %>% drop_na(`TRANSACTION_DT`,`TRANSACTION_AMT`)
+
+datedata <- fulldata %>% group_by(`TRANSACTION_DT`) %>% summarize(Freq = n(),Amt = sum(`TRANSACTION_AMT`),Avg_amt = Amt/Freq)
+datedata$TRANSACTION_DT <- as.Date(datedata$TRANSACTION_DT)
+
+p <- plot_ly(datedata, x = ~TRANSACTION_DT, y = ~Freq, type = 'scatter', mode = 'lines+markers') %>%
+  layout(title = "Number of Transactions by Date in 2017",
+         xaxis = list(title = 'Transaction Date'),
+         yaxis = list(title = 'Transaction numbers'))
+p
+
+```
