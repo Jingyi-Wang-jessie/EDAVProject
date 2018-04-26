@@ -1,0 +1,48 @@
+---
+title: "Sum of Transaction to Different Committee among different States "
+output: html_document
+Team Members: Zihan Ye(zy2293), Jiachen Xu(jx2318), Jingyi Wang(jw3562), Haikun Du(hd2377)
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE,cache = TRUE,warning = FALSE)
+```
+```{r}
+knitr::opts_chunk$set(echo = TRUE)
+cm <- read.csv(file="C:\\Users\\jiachen xu\\Desktop\\Columbia Course\\Data Visualization\\Homework\\project\\cm.txt", header = FALSE, sep="|")
+cm_header <- read.csv(file="C:\\Users\\jiachen xu\\Desktop\\Columbia Course\\Data Visualization\\Homework\\project\\cm_header_file.csv", header = TRUE, sep=",")
+colnames(cm) <- colnames(cm_header)
+data <- read.csv(file="C:\\Users\\jiachen xu\\Desktop\\Columbia Course\\Data Visualization\\Homework\\project\\filtered_v2.csv", header = TRUE, sep=",")
+
+data_use <- data[,c("CMTE_ID","NAME","CITY","STATE","TRANSACTION_AMT")]
+cm_use <- cm[,c("CMTE_ID","CMTE_CITY","CMTE_ST","CMTE_TP","CMTE_PTY_AFFILIATION")]
+all <- merge(data_use,cm_use,by = 'CMTE_ID')
+
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(plotly)
+```
+
+```{r,fig.width=10,fig.height=8}
+library(geofacet)
+library(ggthemes)
+temp2 <- all[,c('CMTE_PTY_AFFILIATION','STATE','TRANSACTION_AMT')]
+temp2 <- temp2[temp2$CMTE_PTY_AFFILIATION == 'DEM' |temp2$CMTE_PTY_AFFILIATION == 'REP',]
+temp2 <- temp2 %>% group_by(STATE, CMTE_PTY_AFFILIATION) %>% summarise(sum = sum(TRANSACTION_AMT))
+
+name_vec <- c(as.character(unique(temp2$STATE)), as.character(unique(temp2$CMTE_PTY_AFFILIATION)))
+
+nodes <- data.frame(name = name_vec, id = 0:63)
+
+group.colors <- c(DEM = "#333BFF", REP = "#FF0000")
+ggplot(temp2, aes(CMTE_PTY_AFFILIATION, sum, fill = CMTE_PTY_AFFILIATION)) +
+    geom_col() +
+     coord_flip() +
+     facet_geo(~ STATE,grid = "us_state_grid2",scales = "free_x") + ylab("Sum of the Transactions")+ xlab("Different Committee")+ labs(title = "Sum of Transaction to Different Committee in different State", fill = "Committee") + theme(axis.text.x = element_blank(),plot.title = element_text( size= 20),axis.title.x = element_text(size= 15),axis.title.y = element_text(size= 15))+scale_fill_manual(values=group.colors)+ scale_colour_colorblind()
+```
+
+For easier comarpsion among states, we draw the geo facet plot. And considering the intention of this graph is to compare the perference of the party among states, the x scales for each state is different, so the variance on the total transasctionswould not influenced the people's analysis. Also, we tested this graph on CVD simulator website (http://www.color-blindness.com/coblis-color-blindness-simulator/), make sure, even color vision deficency person could easily separate the two colors we applied.   
+  
+Based on this graph, we concluded that CA, NY, MA, IL made more donation to Democratic committee. On the contrary, TX, FL,LA, TN made more contributions to Replublican committee. Also, there have some other states did not have clear tendency, like CO. The visualization results was quite consistent with our background information. Hence, we concluded that individual transactions from this dataset could represent the state political perference.  
