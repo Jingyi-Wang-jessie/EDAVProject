@@ -5,8 +5,8 @@ account: hkddd
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 325492
-bundleId: 1326107
+bundleId: 1341392
 url: https://hkddd.shinyapps.io/EDAV/
-when: 1524079989.6071
+when: 1524768144.88094
 asMultiple: FALSE
 asStatic: FALSE

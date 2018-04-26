@@ -25,7 +25,6 @@ navbarPage("Transaction", id="nav",
         selectInput("type", "Transaction type:", c("All", unique(as.character(cleantable$Type)))),
         selectInput("occupation", "Occupation:", c("All", unique(as.character(cleantable$Occupation)))),
         selectInput("party", "Party:", c("All", unique(as.character(cleantable$Party)))),
-        selectInput("month", "Month:", c("All", unique(as.character(cleantable$Month)))),
         selectInput("amount", "Amount:", c("Amount" = "amount"),selected = "amount")
       )
 

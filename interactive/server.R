@@ -37,9 +37,6 @@ function(input, output, session) {
     if (input$party != "All") {
       seldata <- seldata[seldata$party == input$party,]
     }
-    if (input$month != "All") {
-      seldata <- seldata[seldata$month == input$month,]
-    }    
     
     colorBy <- input$amount
     sizeBy <- input$amount
