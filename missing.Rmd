@@ -1,0 +1,59 @@
+---
+title: "Campaign Contribution Pattern Research in 2017-2018 Election Cycle - Analysis of Data Quality"
+output: html_document
+Team Members: Zihan Ye(zy2293), Jiachen Xu(jx2318), Jingyi Wang(jw3562), Haikun Du(hd2377)
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE,
+                      message = FALSE)
+```
+
+We plot a bar to show each column’s missing value percentage in dataset. It is worth noticing that “OCCUPATION” has 4% missing values, because we would look into “OCCUPATION” in the following analysis. Other interested columns, “STATE”, “TRANSACTION_DT”, “TRANSACTION_AMT” have some values.
+```{r, fig.width=20, fig.height=10}
+library(readr)
+library(dplyr)
+library(ggplot2)
+na <- read.csv("datafiles/missing.csv")
+
+g <- ggplot(na, aes(x = colname , y = missing)) + geom_bar(stat = "identity")  + geom_text(aes(label=missing), vjust=-1, color = "red", size = 5)
+g +labs(title="Missing Values Pattern In Columns",
+        x ="Columns", y = "Percentage") + theme(plot.title = element_text(size = 30, hjust = 0.5), axis.title.x = element_text(size= 20),axis.title.y = element_text(size= 20))
+
+```
+
+
+
+Addtionally, we applied visna to plot na values to further check if there is any missing pattern. We only kept columns used for later analysis and ignore columns, such as "MEMO_TEXT", "MEMO_CD" and etc. There is not any obvious missing patterns identified in the graph. 
+```{r}
+#install.packages("extracat")
+library(extracat)
+nadf <- read.csv("filtered_v2.csv", na.strings=c("","NA"))
+cols <- c('CMTE_ID', 'AMNDT_IND', 'RPT_TP', 'TRANSACTION_TP',  
+  'NAME', 'CITY', 'STATE', 'ZIP_CODE', 'EMPLOYER', 'OCCUPATION', 'TRANSACTION_DT', 'TRANSACTION_AMT')
+newdf <- nadf[cols]
+visna(newdf, sort = 'r')
+
+```
+
+
+
+Specifically, we looked into “OCCUPATION” column. There are typos and the same occupation is written in different formats. For instance both “DIR” and "director" are in "OCCUPATION", but "DIR" is just abbreviation of "directo". Additionally, some rows have several occupations cluster in one cell indicating this contributor has multiple professional roles. For analysis simplicity, we only kept the first appeared title. Furthermore, we grouped occupations, for instance, “Retired-teachers” and “Retired-CEO” were clustered as “retired”. Unavoidably, this action introduced bias into the dataset.
+
+We also plot another bar chart indicating different occupations’ frequency.  We replaced all missing value in “OCCUPATION” with “NONE”. From the bar chart, “NONE” ranked the fourth most frequent occupation.Because there is no way we can identify true values, meaning they are missing completely at random. In the future in-depth analysis and visualization in occupation, we excluded these data.
+
+
+
+
+```{r, fig.width=20, fig.height=10}
+library(readr)
+library(dplyr)
+occu <- read.csv("datafiles/occumissing.csv")
+
+occu$occu <- factor(occu$occu, levels = occu$occu[order(occu$missing)])
+
+g <- ggplot(occu, aes(x = occu , y = missing)) + geom_bar(stat = "identity")  + geom_text(aes(label=missing), hjust = -0.5, vjust=0.5, color = "red") + coord_flip()
+g +labs(title="Occupations Frequency",
+        x ="Occupations", y = "Frequency/(Count)") + theme(plot.title = element_text(size = 30, hjust = 0.5), axis.title.x = element_text(size= 20),axis.title.y = element_text(size= 20))
+```
+
