@@ -1,0 +1,23 @@
+---
+title: "Campaign Contribution Pattern Research in 2017-2018 Election Cycle - Presentation Style"
+output: html_document
+Team Members: Zihan Ye(zy2293), Jiachen Xu(jx2318), Jingyi Wang(jw3562), Haikun Du(hd2377)
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE,
+                      message = FALSE)
+```
+
+
+```{r, fig.width=20, fig.height=10}
+library(readr)
+library(dplyr)
+library(ggplot2)
+occu <- read.csv("datafiles/occumissing.csv")
+
+occu$occu <- factor(occu$occu, levels = occu$occu[order(occu$missing)])
+
+g <- ggplot(occu, aes(x = occu , y = missing)) + geom_bar(stat = "identity")  + geom_text(aes(label=missing), hjust = -0.5, vjust=0.5, color = "red") + coord_flip()
+g +labs(title="Occupations Frequency",
+        x ="Occupations", y = "Frequency/(Count)") + theme(plot.title = element_text(size = 30, hjust = 0.5), axis.title.x = element_text(size= 20),axis.title.y = element_text(size= 20))
+```
