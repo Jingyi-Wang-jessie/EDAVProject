@@ -1,0 +1,131 @@
+---
+title: "Campaign Contribution Pattern Research in 2017-2018 Election Cycle - Time"
+output: html_document
+Team Members: Zihan Ye(zy2293), Jiachen Xu(jx2318), Jingyi Wang(jw3562), Haikun Du(hd2377)
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+```
+
+This page focuses on researching and visualizing compaign contribution pattern in the dimension of “Time”.
+
+### Part 0 Data Preprocessing
+
+The following codes dealt with data preprossing in time analysis. We used the transaction and committee data together, to understand the specific destination of each transaction, e.g. the party information. Besides, we grouped the data by date and then calculated the everyday total amount, average amount and number of transactions.
+
+```{r}
+library(ggplot2)
+library(tidyverse)
+df <- read.csv("filtered_v2.csv")
+
+fulldata <- df %>% drop_na(`TRANSACTION_DT`,`TRANSACTION_AMT`)
+committee_master <- read.csv("Committee_Master.csv", header = FALSE, col.names = c("CMTE_ID","CMTE_NM","TRES_NM","CMTE_ST1","CMTE_ST2","CMTE_CITY","CMTE_ST","CMTE_ZIP","CMTE_DSGN","CMTE_TP","CMTE_PTY_AFFILIATION","CMTE_FILING_FREQ","ORG_TP","CONNECTED_ORG_NM","CAND_ID"))
+fulldata$TRANSACTION_DT <- as.Date(fulldata$TRANSACTION_DT)
+fulldata$TRANSACTION_MONTH <- months(fulldata$TRANSACTION_DT)
+
+total <-  merge(fulldata, committee_master, by = "CMTE_ID")
+totaldf <- total %>% drop_na(`CMTE_PTY_AFFILIATION`)
+
+datedata <- totaldf %>% group_by(`TRANSACTION_DT`) %>% summarize(Freq = n(),Amt = sum(`TRANSACTION_AMT`),Avg_amt = Amt/Freq)
+
+datedata$TRANSACTION_DT <- as.Date(datedata$TRANSACTION_DT)
+```
+
+### Part 1 Trend
+
+```{r}
+library(plotly)
+p <- plot_ly(datedata, x = ~TRANSACTION_DT, y = ~Amt, type = 'scatter', mode = 'lines') %>%
+  layout(title = "Total amount of transactions by date in 2017",
+         xaxis = list(title = 'Transaction Date'),
+         yaxis = list(title = 'Transaction total amount'))
+p
+```
+
+In order to generate a long-term trend about the transactions, we first made a line chart on daily base about total amount of transactions. Each data point represented the total amount of contribution in that day. We could observe periodic peaks in this graph, which denoted the rule that much more people tend to contribute at the end of every month, especially in March, June, September and December.
+
+And From the following graphs, we knew that the changes of total amount of contribution were directly related to that of the number of transactions, because the average amount of transactions appeared similar around the whole year. So we paid attention to the transaction number in the following research.
+
+```{r}
+library(plotly)
+p <- plot_ly(datedata, x = ~TRANSACTION_DT, y = ~Avg_amt, type = 'scatter', mode = 'lines') %>%
+  layout(title = "Average Transaction amount by date in 2017",
+         xaxis = list(title = 'Transaction Date'),
+         yaxis = list(title = 'Average Transaction Amount'))
+p
+```
+
+```{r}
+library(plotly)
+p <- plot_ly(datedata, x = ~TRANSACTION_DT, y = ~Freq, type = 'scatter', mode = 'lines') %>%
+  layout(title = "Number of Transactions by date in 2017",
+         xaxis = list(title = 'Transaction Date'),
+         yaxis = list(title = 'Transaction numbers'))
+p
+```
+
+We also added a Smoother operation to the scatter plot, where each data point represented the everyday transaction number. From the smoother graph, we learned more about the tendency. Except the four obvious peaks, there was also a long-term trend that the number of transactions slightly increased.
+
+```{r}
+ggplot(datedata, aes(TRANSACTION_DT, Freq)) + 
+  geom_point()+
+  geom_smooth(method = "loess", span = 0.15, se = FALSE)+ 
+  ggtitle("Number of  Transactions scatter plot by date in 2017 (shown with Smoother) ")+
+  xlab("Transaction Date")+
+  ylab("Transaction Numbers")
+```
+
+### Part 2 Day Pattern Analysis
+
+Besides, we added a label denoting the day of week over the line chart in Part 1, which helped us understand the day patterns. From the plot below, we concluded that there existed valleies on Saturday, Sunday and peaks on some weekdays, such as Friday.
+
+```{r}
+datedata$Day <- weekdays(datedata$TRANSACTION_DT)
+library(plotly)
+p <- plot_ly(
+    datedata, x = ~TRANSACTION_DT, y = ~Freq,
+    type = 'scatter',
+    mode = 'lines+markers',
+    # Hover text:
+    hoverinfo = 'text',
+    text = ~paste(Day)
+) %>%
+  layout(title = "Number of Transactions by date in 2017 (shown with day label)",
+         xaxis = list(title = 'Transaction Date'),
+         yaxis = list(title = 'Transaction numbers'))
+p
+```
+
+We also faceted the transaction number line plot on day, and each subplot represented the trend of that day of week. It was obvious to discover some informative patterns on Friday and Saturday. This probably reflected some special or influencial events happened on that day which seemed really effective.
+
+```{r warning=FALSE}
+library(lubridate)
+ggplot(datedata, aes(TRANSACTION_DT, Freq)) +
+    geom_line() +
+    facet_grid(wday(TRANSACTION_DT, label = TRUE)~.,scales = "free_y")+
+  ggtitle("Number of  Transactions line Chart by date in 2017 (faceted on day) ")+
+    xlab("Transaction Date")+
+    ylab("Transaction Numbers")
+```
+
+### Part 3 Comparison
+
+Finally, we needed to further compare the transactions among differnt parties in each month. From the stacked bar plot, we discovered that Democratic party(DEM) maintained an advantage over all other parties in 2017, followed by Republican Party(REP). What's more, the proportion of DEM was high in March, September and December, while it was relatively low in January, July and August. 
+
+```{r}
+monthdata <- total %>% group_by(`TRANSACTION_MONTH`, `CMTE_PTY_AFFILIATION`) %>% summarize(Freq = n(),Amt = sum(`TRANSACTION_AMT`),Avg_amt = Amt/Freq) %>% top_n(8,`Freq`)
+
+monthdata$TRANSACTION_MONTH <- factor(monthdata$TRANSACTION_MONTH,levels=c("January","February","March","April","May","June","July","August","September","October","November","December"),ordered=TRUE)
+
+monthdata <- monthdata[!(monthdata$CMTE_PTY_AFFILIATION == "." | monthdata$CMTE_PTY_AFFILIATION == "0" | monthdata$CMTE_PTY_AFFILIATION == ""), ] 
+
+ggplot(monthdata, aes(x = `TRANSACTION_MONTH`, y = Freq, fill = `CMTE_PTY_AFFILIATION`)) + 
+  geom_col(position = "stack") +
+  ggtitle("Number of Transactions by month in 2017 (top 8 parties)")+
+  xlab("Transaction month")+
+  ylab("Transaction Numbers")+
+  labs(fill = "Party")
+  
+```
+
