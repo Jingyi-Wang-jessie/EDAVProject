@@ -1,5 +1,5 @@
 # EDAVProject
-### Topic: Federal Committee Contribution Analysis
+### Topic: Campaign Contribution Pattern Research
 
 *Team members:*  
 
