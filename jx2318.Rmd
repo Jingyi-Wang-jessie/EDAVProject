@@ -136,7 +136,7 @@ group.colors <- c(DEM = "#333BFF", REP = "#FF0000")
 ggplot(temp2, aes(CMTE_PTY_AFFILIATION, sum, fill = CMTE_PTY_AFFILIATION)) +
     geom_col() +
      coord_flip() +
-     facet_geo(~ STATE,grid = "us_state_grid2",scales = "free_x") + ylab("Sum of the Transactions")+ xlab("Parties")+ labs(title = "Sum of Transaction to Different Parties among Different States", fill = "Committee") + theme(axis.text.x = element_blank(),plot.title = element_text( size= 20),axis.title.x = element_text(size= 15),axis.title.y = element_text(size= 15))+scale_fill_manual(values=group.colors)+ scale_colour_colorblind()
+     facet_geo(~ STATE,grid = "us_state_grid2",scales = "free_x") + ylab("Sum of the Transactions")+ xlab("Parties")+ labs(title = "Sum of Transaction to Different Parties in Different States", fill = "Committee") + theme(axis.text.x = element_blank(),plot.title = element_text( size= 20),axis.title.x = element_text(size= 15),axis.title.y = element_text(size= 15))+scale_fill_manual(values=group.colors)+ scale_colour_colorblind()
 ```
   
 For easier comparison among states, we draw the geo facet plot. And considering the intention of this graph is to compare the preference of the party among states, the x scales for each state is different, so the variance on the total transactions would not influence the people's analysis. Also, we tested this graph on CVD simulator website (http://www.color-blindness.com/coblis-color-blindness-simulator/), make sure, even colour vision deficiency person could easily separate the two colours we applied. 
