@@ -32,7 +32,7 @@ library(plotly)
 ```
 1. General Exploration
 Evaluate the data
-```{r,fig.width=10,fig.height=10}
+```{r,fig.width=10,fig.height=8}
 library(plotly)
 temp <- all[,c('CITY','STATE','TRANSACTION_AMT')]
 temp <- temp %>% group_by(STATE,CITY) %>% mutate(sum = sum(TRANSACTION_AMT))
@@ -68,7 +68,7 @@ p <- temp %>%   plot_ly(type = 'parcoords',
 p
 ```
 In this section, we fouced on explore the dataset from the geopraphic aspect. Firstly, we visulized the geographical dataset to evaluate the date. Some results appealed our attention, a number of cities point to different states. At first, we thougth this may because some pure errors in the dataset. However, after some investigation, we found there there do have a number of cities share same name but locate in different states. Considering this situation, we decided only apply 'STATE' as index to explore the dat to avoid misunderstaing by applying 'CITY' data.  (In this graph, to make the observation clearer, we only select 5 cities.)
-```{r,fig.width=10,fig.height=10}
+```{r,fig.width=10,fig.height=8}
 
 temp <- all[,c('CMTE_ST','STATE','TRANSACTION_AMT','CMTE_PTY_AFFILIATION')]
 temp <- temp[!temp$STATE == '',]
@@ -79,7 +79,7 @@ ggplot(temp, aes(sum, reorder(`STATE`,sum))) + geom_point(size = 5) + xlab("The 
 ```
   
 From this graph, we observed that when considering the total transaction amount, 'CA', 'NY' and 'TX' led all other states, have much higher transaction amount. And the transaction amount among different states differed a lot, comparing 'CA' and 'FM'. (This graph contained more than 50 states, because some abbreviation represents transactions from outside US.)
-```{r,fig.width=10,fig.height=10}
+```{r,fig.width=10,fig.height=8}
 
 temp <- all[,c('CITY','STATE','TRANSACTION_AMT')]
 temp <- temp %>% group_by(STATE,CITY) %>% mutate(sum = sum(TRANSACTION_AMT),count = n())
@@ -93,7 +93,7 @@ Acooring to this graph, we found that for most statse, the sum of transactions w
   
 2. Committee Type and States  
 The intention for this graph was to detect whether there have clear preference about committee types among different states. The data set including 16 different types of the cimmitees in total. Of course, most of them are PAC(Political Action Committee). However, the data also include some other types of the committee, like Campaign committee for candidate for Senate, Campaign committee for candidate for President. We want to dig whether individuals from different states have different preferences among these kinds of committee as well. We achieved this through drawing this sankeynetwork.  
-```{r,fig.width=10,fig.height=10}
+```{r,fig.width=10,fig.height=8}
 library(networkD3)
 temp1 <- all[,c('CMTE_TP','STATE','TRANSACTION_AMT')]
 temp1 <- temp1 %>% group_by(STATE, CMTE_TP) %>% summarise(sum = sum(TRANSACTION_AMT))
@@ -119,8 +119,9 @@ Observing the graph from right to left, first, we could found that, CA, followed
   
 3. Committee and States   
 Now, let's focus on more interesting part. There have 61 different committee in the original dataset in total. At first, we tried to includ all of them into one graph. But we found the final performace was not that good. So we decided focus on the two largest committee, demcratic and republican party, which are also the two biggest parties in the united states. This graph intended to detect whether individual transactions from this dataset could represent the state political perference.  
-```{r,fig.width=10,fig.height=10}
+```{r,fig.width=10,fig.height=8}
 library(geofacet)
+library(ggthemes)
 temp2 <- all[,c('CMTE_PTY_AFFILIATION','STATE','TRANSACTION_AMT')]
 temp2 <- temp2[temp2$CMTE_PTY_AFFILIATION == 'DEM' |temp2$CMTE_PTY_AFFILIATION == 'REP',]
 temp2 <- temp2 %>% group_by(STATE, CMTE_PTY_AFFILIATION) %>% summarise(sum = sum(TRANSACTION_AMT))
@@ -133,7 +134,7 @@ group.colors <- c(DEM = "#333BFF", REP = "#FF0000")
 ggplot(temp2, aes(CMTE_PTY_AFFILIATION, sum, fill = CMTE_PTY_AFFILIATION)) +
     geom_col() +
      coord_flip() +
-     facet_geo(~ STATE,grid = "us_state_grid2",scales = "free_x") + ylab("Sum of the Transactions")+ xlab("Different Committee")+ labs(title = "Sum of Transaction to Different Committee in different State", fill = "Committee") + theme(axis.text.x = element_blank(),plot.title = element_text( size= 20),axis.title.x = element_text(size= 15),axis.title.y = element_text(size= 15))+scale_fill_manual(values=group.colors)
+     facet_geo(~ STATE,grid = "us_state_grid2",scales = "free_x") + ylab("Sum of the Transactions")+ xlab("Different Committee")+ labs(title = "Sum of Transaction to Different Committee in different State", fill = "Committee") + theme(axis.text.x = element_blank(),plot.title = element_text( size= 20),axis.title.x = element_text(size= 15),axis.title.y = element_text(size= 15))+scale_fill_manual(values=group.colors)+ scale_colour_colorblind()
 ```
 For easier comarpsion, we draw the geo facet plot. And considering the intention of this graph, we set scales = free_x, which make the perference between states easier to be observed, althought the total transasctions among states various a lot.  
 CA, NY, MA, IL made more donation to Democratic committee. On the contrary, TX, FL,LA, TN made more contributions to Replublican committee. Also, there have some other states did not have clear tendency, like CO. The visualization results was quite consistent with our background information. Hence, we concluded that individual transactions from this dataset could represent the state political perference.   
